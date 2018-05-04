@@ -4,8 +4,8 @@ INCLUDE(ExternalProject)
 EXTERNALPROJECT_ADD(
     websocketpp
     PREFIX "${PROJECT_BINARY_DIR}"
-    URL "file://${VENDOR_DIRECTORY}/websocketpp-0.7.0.zip"
-    URL_MD5 "1dfa1a91e48885e884589c6742fbf8b1"
+    URL "file://${VENDOR_DIRECTORY}/websocketpp-0.7.0.patch.zip"
+    URL_MD5 "920f28fa91f551885825c1f3971bafac"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     BUILD_IN_SOURCE 1
