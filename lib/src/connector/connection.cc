@@ -118,6 +118,7 @@ Connection::Connection(std::vector<std::string> broker_ws_uris,
         // Pong timeout
         endpoint_->set_pong_timeout(client_metadata_.pong_timeout_ms);
 
+        LOG_DEBUG("Starting websocket thread");
         // Start the event loop thread
         endpoint_thread_.reset(new Util::thread(&WS_Client_Type::run, endpoint_.get()));
     } catch (...) {
@@ -198,6 +199,7 @@ void Connection::connect(int max_connect_attempts)
     std::random_device rd;
     std::default_random_engine engine { rd() };
     std::uniform_int_distribution<int> dist { -500, 500 };
+    LOG_DEBUG("Establishing connection...");
 
     do {
         current_c_s = connection_state_.load();
@@ -209,6 +211,7 @@ void Connection::connect(int max_connect_attempts)
 
         switch (current_c_s) {
         case(ConnectionState::initialized):
+            LOG_DEBUG("Connection initialized");
             assert(previous_c_s == ConnectionState::initialized);
             connectAndWait();
             if (connection_state_.load() == ConnectionState::open)
@@ -216,16 +219,19 @@ void Connection::connect(int max_connect_attempts)
             break;
 
         case(ConnectionState::connecting):
+            LOG_DEBUG("Connection connecting");
             previous_c_s = ConnectionState::connecting;
             doSleep();
             continue;
 
         case(ConnectionState::open):
+            LOG_DEBUG("Connection open");
             if (previous_c_s != ConnectionState::open)
                 connection_backoff_ms_ = CONNECTION_BACKOFF_MS;
             return;
 
         case(ConnectionState::closing):
+            LOG_DEBUG("Connection closing");
             previous_c_s = ConnectionState::closing;
             doSleep();
             continue;
@@ -250,6 +256,8 @@ void Connection::connect(int max_connect_attempts)
                 }
             }
             break;
+        default:
+            LOG_WARNING("WARNING: Websocket connection returned unknown state");
         }
     } while (try_again);
 
@@ -263,6 +271,7 @@ void Connection::connect(int max_connect_attempts)
 
 void Connection::send(const std::string& msg)
 {
+    LOG_DEBUG("Sending Message");
     websocketpp::lib::error_code ec;
     endpoint_->send(connection_handle_,
                     msg,
@@ -275,6 +284,7 @@ void Connection::send(const std::string& msg)
 
 void Connection::send(void* const serialized_msg_ptr, size_t msg_len)
 {
+    LOG_DEBUG("Sending Message");
     websocketpp::lib::error_code ec;
     endpoint_->send(connection_handle_,
                     serialized_msg_ptr,
@@ -339,6 +349,7 @@ void Connection::tryClose()
 
 void Connection::cleanUp()
 {
+    LOG_DEBUG("Cleaning connection");
     auto c_s = connection_state_.load();
 
     switch (c_s) {
@@ -420,6 +431,7 @@ void Connection::connect_()
 
 std::string const& Connection::getWsUri()
 {
+    LOG_DEBUG("Fetch Websocket URI");
     auto c_t = connection_target_index_.load();
     return broker_ws_uris_[c_t % broker_ws_uris_.size()];
 }
